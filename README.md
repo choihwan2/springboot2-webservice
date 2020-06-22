@@ -47,7 +47,6 @@ apply plugin: 'io.spring.dependency-management'
 
 group 'org.choihwan2.springboot'
 version '1.0-SNAPSHOT'
-sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
@@ -60,7 +59,6 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 ```
-
 - 먼저 위의 `buildscript` 부분에서 `ext` 라는 키워드는 build.gradle 에서 사용하는 전연변수를 설정하고 후에 나오는 스프링 부트 그레이들 플러그인의 버전을 `2.1.7RELEASE`를 의존성으로 받겠다는 코드이다.
 - 그리고 후의 apply pugin.. 들은 앞서 선언한 플로그인 의존성들을 적용할 것인지 결정
 - `repositories` 는 각종 의존성들을 어떤 원격 저장소에서 받을지 정하는 것이다.
@@ -71,3 +69,12 @@ dependencies {
 
 
 > 가장 의문이였던 것이 gradle이란 대체 무엇을 하는건가..? 였다. 아직까지도 빌드자동화를 도와준다고 하는데 이해가 부족하다.더 알아볼 필요가 있을것 같고 [링크1](https://medium.com/@goinhacker/%EC%9A%B4%EC%98%81-%EC%9E%90%EB%8F%99%ED%99%94-1-%EB%B9%8C%EB%93%9C-%EC%9E%90%EB%8F%99%ED%99%94-by-gradle-7630c0993d09) [링크2](https://araikuma.tistory.com/463) 좀 더 공부하자.
+
+
+
+
+
+## intelliJ 단축키들(Mac)
+
+- Action 창 검색 : `Command + Shift + A`
+- 
