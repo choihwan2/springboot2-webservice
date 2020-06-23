@@ -140,7 +140,7 @@ public class Application {
 
 
 
-- HelloController
+- HelloController.java
 
 ```java
 package com.choihwan2.book.springboot2.web;
@@ -243,6 +243,151 @@ public class HelloControllerTest {
 build.gradle에 `compile('org.projectlombok:lombok')`
 
 한줄 추가와 plugins 에서 lombok을 찾아 설치하고 롬복에 대한 설정으로 인텔리제이에서 추천해주는 설정을 하면 완료!
+
+
+
+이제 이 lombok 을 사용해보고 그것을 테스트 하는 코드를 짜보겠다
+
+
+
+- HelloResponseDto.java
+
+```java
+package com.choihwan2.book.springboot2.web.dto;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
+public class HelloResponseDto {
+    private final String name;
+    private final int amount;
+}
+```
+
+- `@Getter`
+  - 선언된 모든 필드의 get 메소드를 생성해 준다.
+- `@RequiredArgsConstructor`
+  - 선언된 모든 final 필드가 포함된 생성자 생성
+  - final 이 없는 필드는 생성자에 포함되지 않는다.
+
+
+
+- HelloResonseDtoTest.java
+
+```java
+package com.choihwan2.book.springboot2.web.dto;
+
+import org.junit.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class HelloResponseDtoTest {
+
+    @Test
+    public void 룸복_기능_테스트() {
+        //given
+        String name = "test";
+        int amount = 1000;
+
+        //when
+        HelloResponseDto dto = new HelloResponseDto(name,amount);
+
+        //then
+        assertThat(dto.getName()).isEqualTo(name);
+        assertThat(dto.getAmount()).isEqualTo(amount);
+    }
+}
+```
+
+- `assertThat`
+  - `assertj` 라는 테스트 검증 라이브러리의 검증 메소드이다.
+  - 검증하고 싶은 대상을 메소드 인자로 받음
+  - 메소드 체이닝이 지원되어 `isEqualTo` 와 같이 메소드를 이어서 사용 가능
+- `isEqualTo`
+  - `assertj` 의 동등 비교 메소드이다.
+  - `assertThat`에 있는 값과 `isEqualTo`의 값을 비교해서 같을때만 성공이다
+
+>여기서 라이브러리를 보면 Junit의 기본 assertThat 이 아닌 assetj의 assertThat 을 사용하고 있다. 저자는 CoreMathers와 달리 추가적 라이브러리가 필요하지 않다는 것과 자동완성이 좀 더 확실하게 지원되는 장점을 뽑는데 더 자세한 내용은 [이것](http://bit.ly/30vm9Lg) 를 참고하자.
+
+
+
+이 상태에서 테스트를 실행했을때 동작한다면 다행이지만 아니라면 그레이들 버전이 4.10.2인지 확인이 필요하다. 테스트 실패 원인 파악과 어떻게 해결하는지 보려면 [이곳](http://bit.ly/382Q7d7) 을 참고하자.
+
+
+
+그 후에 HelloController 도 새로 만든 ResponseDto를 사용하도록 코드를 추가해보겠다.
+
+- HelloController.java 안에 추가
+
+```java
+    @GetMapping("/hello/dto")
+    public HelloResponseDto helloDto(@RequestParam("name") String name, @RequestParam("amount") int amount) {
+        return new HelloResponseDto(name, amount);
+    }
+```
+
+- `RequestParam`
+  - 외부에서 API 로 넘긴 파라미터를 가져오는 어노테이션이다.
+  - 여기서 외부 name(@RequestParam("name")) 이란 이름으로 넘긴 파라미터를 메소드 파리미터 name(String name) 에 저장하게 된다.
+
+
+
+이제 추가된 API를 테스트하는 코드를 HelloControllerTest에 추가해보자.
+
+
+
+- HelloControllerTest
+
+```java
+package com.choihwan2.book.springboot2.web;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@RunWith(SpringRunner.class)
+@WebMvcTest(controllers = HelloController.class)
+public class HelloControllerTest {
+    @Autowired
+    private MockMvc mvc;
+
+    @Test
+    public void hello가_리턴된다() throws Exception {
+        String hello = "hello";
+
+        mvc.perform(get("/hello")).andExpect(status().isOk()).andExpect(content().string(hello));
+    }
+
+
+    @Test
+    public void helloDto가_리턴된다() throws Exception {
+        String name = "hello";
+        int amount = 1000;
+
+        mvc.perform(get("/hello/dto").param("name", name).param("amount", String.valueOf(amount))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is(name))).andExpect(jsonPath("$.amount", is(amount)));
+
+    }
+}
+```
+
+- `.param`
+  - API 테스트 할때 사용될 요청 파라미터를 설정한다.
+  - 값은 `String` 만 허용된다.
+  - 숫자/날짜 등의 데이터도 등록할 때는 문자열로 변경해야한다. 
+- `jsonPath`
+  - JSON 응답값을 필드별로 검증할 수 있는 메소드 이다.
+  - `$`를 기준으로 필드명을 명시
+  - 여기서 name 과 amount 를 검증하니 $.name , $.amount 로 검증한다.
 
 ## intelliJ 단축키들(Mac)
 
