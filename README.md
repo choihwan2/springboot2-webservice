@@ -173,7 +173,76 @@ src/test/java 디렉토리에 앞에 생성했던 패키자를 그대로 다시 
 
 
 
+- HelloControllerTest.java
 
+```java
+package com.choihwan2.book.springboot2.web;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@RunWith(SpringRunner.class)
+@WebMvcTest(controllers = HelloController.class)
+public class HelloControllerTest {
+    @Autowired
+    private MockMvc mvc;
+
+    @Test
+    public void hello가_리턴된다() throws Exception{
+        String hello = "hello";
+
+        mvc.perform(get("/hello")).andExpect(status().isOk()).andExpect(content().string(hello));
+    }
+}
+```
+
+- `@RunWith(SpringRunner.class)`
+  - 테스트를 진행할 때 JUnit 에 내장된 실행자 외에 다른 실행자를 실행시킨다.
+  - 여기서는 SpringRunner 라는 스프링 실행자를 사용
+  - 즉, 스프링 부트 테스트 와 JUnit 사이의 연결자 역활을 한다고 볼 수 있다.
+- `WebMvcTest`
+  - 여러 스프링 테스트 어노테이션 중, Web(Spring MVC)에 집중 할 수 있는 어노테이션 이다.
+  - 선언할 경우 `@Controller`, `@ControllerAdvice` 등을 사용할 수 있음
+  - 단, `@Service, @Component, @Repository` 등은 사용할 수 없다.
+  - 여기서는 컨트롤러만 사용하기 떄문에 선언
+- `@AutoWired`
+  - 스프링이 관리하는 빈(Bean)을 주입 받는다.
+- `private MockMVC mvc`
+  - 웹 API를 테스트할 때 사용
+  - 스프링 MVC 테스트의 시작점
+  - 이 클래스를 통해 HTTP GET, POST 등에 대한 API 테스트를 할 수 있다.
+- `mvc.perform(get("/hello"))`
+  - MockMvc를 통해 /hello 주소로 HTTP GET 요청을 한다.
+  - 체이닝이 지원되어 아래와 같이 여러 검증을 이어서 선언 가능하다.
+- `.andExpect(status().isOk())`
+  - mvc.perform 의 결과를 검증
+  - HTTP Header의 Status를 검증한다. (ex 200,404,500등의 상태를 검증)
+  - 여기서는 isOk()로 200인지 아닌지를 검증한다.
+- `.andExpect(content().string(hello))`
+  - mvc.perform의 결과를 검증한다.
+  - 응답 본문의 내용을 검증
+  - Controller 에서 "hello" 를 리턴하기 때문에 이 값이 맞는지 검증한다.
+
+
+
+이제 테스트 코드로 검증해보고 정 의심이 간다면 브라우저로 잘 진행되는지 확인해본다.
+
+
+
+#### 롬복(lombok)
+
+롬복은 자바 개발을 할때 자주 사용하는 코드 Getter, Setter, 기본 생성자, toString 등을 어노테이션으로 자동 생성해주는 라이브러리이다. 인텔리제이에선 플러그인으로 쉽게 설정 가능하니 추가해봅시다!
+
+build.gradle에 `compile('org.projectlombok:lombok')`
+
+한줄 추가와 plugins 에서 lombok을 찾아 설치하고 롬복에 대한 설정으로 인텔리제이에서 추천해주는 설정을 하면 완료!
 
 ## intelliJ 단축키들(Mac)
 
