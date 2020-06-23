@@ -101,6 +101,80 @@ dependencies {
 
 이에 덧붙여 저자의 경험담은..
 
+- **빠른 피드백**
+  - 내가 하던 예전의 개발 방식으로는 코드를 수정할 때 마다 반복 해야하는 상황이 발생한다. (ex : Tomcat을 재시작하는 상황) 이런 상황을 해결해준다.
+- **눈으로 하지 않아도 되는 자동 검증**
+  - 그전에 `System.out.println` 으로 매번 찍어가며 눈으로 검증하던것을 자동검증이 가능하게 한다.
+- **개발자가 만든 기능을 안전하게 보호**
+  - 기존에 잘되던 A라는 기능에 B기능이 잘되어 있는지 테스트해보고 오픈했더니  A기능에 문제가 생긴것을 발견. 이런 문제는 규모가 큰 서비스에서 빈번하게 일어나는 일이다. 하나의 기능을 추가할때마다 서비스의 모든 기능을 테스트 할 수는 없다. 이런 새로운 기능이 추가될 때, 기존 기능이 잘 작동되는 것을 보장해주는것이, 테스트 코드이다.
+
+
+
+이제 Package를 만들고 본격적으로 Spring boot 프로젝트 코드를 작성해보자.
+
+
+
+- Application.java
+
+```java
+package com.choihwan2.book.springboot2;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+```
+
+이 `Applicaton` 클래스는 앞으로 만들 프로젝트의 **메인 클래스**가 된다. `@SpringBootApplication` 으로 인해 스프링 부트의 자동설정, 스프링의 `Bean` 읽기와 생성을 모두 자동으로 설정된다. 특히나 `@SpringBootApplication` **이 있는 위치부터 설정을 읽어** 나가기 때문에! 이 클래스는 항상 **프로젝트의 최상단에 위치**해야한다.
+
+이 안의 `main`에서 실행하는 `SpringApplication.run` 으로 인해 내장 WAS(Web Application Server) 가 실행된다. 이렇게 되면 항상 서버에 톰캣을 설치할 필요가 없고, 스프링 부트로 만들어진 Jar 파일(실행가능한 Java 패키징 파일)로 실행하면 된다. 꼭 스프링 부트 내장 WAS를 사용할 수 있는 것은 아니지만, 그 이유는 **'언제 어디서나 같은 환경에서 스프링 부트를 배포'** 할수 있기 때문이다. 외장 WAS를 쓴다면.. 과거에 내가 했던 경험으로는 Tomca 서버 버전을 맞추고.. 등등 환경설정에서 꽤 많은 힘이들어가는데 이걸 줄여줄 수 있다고 설명할 수 있다.
+
+
+
+이제 안에 컨트롤러를 위한 새로운 패키지를 만들고 컨트롤러 클래스를 만들어보고 테스트 해보겠다.
+
+
+
+- HelloController
+
+```java
+package com.choihwan2.book.springboot2.web;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class HelloController {
+
+    @GetMapping("/hello")
+    public String hello(){
+        return "hello";
+    }
+}
+```
+
+- `RestController`
+  - 컨트롤러를 JSON을 반환하는 컨트롤러로 만들어 준다.
+  - 예전에는 `@ResponseBody` 를 각 메소드마다 선언했던 것을 한번에 사용할 수 있게 도와준다고 생각하면된다.
+- `GetMapping`
+  - HTTP method 인 `Get` 의 요청을 받을 수 있는 API를 만들어 준다.
+  - 과거에는 `@RequestMapping(method = RequestMethod.GET)`으로 사용되던 것이다.
+
+
+
+컨트롤러를 작성했으니 이제 이 코드가 제대로 작동하는지 테스트를 해보자. **WAS를 실행하지 않고 테스트 코드로 검증**해 보겠다.
+
+src/test/java 디렉토리에 앞에 생성했던 패키자를 그대로 다시 생성해보자.
+
+
+
+
+
 ## intelliJ 단축키들(Mac)
 
 - Action 창 검색 : `Command + Shift + A`
