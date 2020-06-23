@@ -101,12 +101,17 @@ dependencies {
 
 이에 덧붙여 저자의 경험담은..
 
-- **빠른 피드백**
-  - 내가 하던 예전의 개발 방식으로는 코드를 수정할 때 마다 반복 해야하는 상황이 발생한다. (ex : Tomcat을 재시작하는 상황) 이런 상황을 해결해준다.
-- **눈으로 하지 않아도 되는 자동 검증**
-  - 그전에 `System.out.println` 으로 매번 찍어가며 눈으로 검증하던것을 자동검증이 가능하게 한다.
-- **개발자가 만든 기능을 안전하게 보호**
-  - 기존에 잘되던 A라는 기능에 B기능이 잘되어 있는지 테스트해보고 오픈했더니  A기능에 문제가 생긴것을 발견. 이런 문제는 규모가 큰 서비스에서 빈번하게 일어나는 일이다. 하나의 기능을 추가할때마다 서비스의 모든 기능을 테스트 할 수는 없다. 이런 새로운 기능이 추가될 때, 기존 기능이 잘 작동되는 것을 보장해주는것이, 테스트 코드이다.
+**빠른 피드백**
+
+- 내가 하던 예전의 개발 방식으로는 코드를 수정할 때 마다 반복 해야하는 상황이 발생한다. (ex : Tomcat을 재시작하는 상황) 이런 상황을 해결해준다.
+
+**눈으로 하지 않아도 되는 자동 검증**
+
+- 그전에 `System.out.println` 으로 매번 찍어가며 눈으로 검증하던것을 자동검증이 가능하게 한다.
+
+**개발자가 만든 기능을 안전하게 보호**
+
+- 기존에 잘되던 A라는 기능에 B기능이 잘되어 있는지 테스트해보고 오픈했더니  A기능에 문제가 생긴것을 발견. 이런 문제는 규모가 큰 서비스에서 빈번하게 일어나는 일이다. 하나의 기능을 추가할때마다 서비스의 모든 기능을 테스트 할 수는 없다. 이런 새로운 기능이 추가될 때, 기존 기능이 잘 작동되는 것을 보장해주는것이, 테스트 코드이다.
 
 
 
@@ -130,7 +135,11 @@ public class Application {
 }
 ```
 
+
+
 이 `Applicaton` 클래스는 앞으로 만들 프로젝트의 **메인 클래스**가 된다. `@SpringBootApplication` 으로 인해 스프링 부트의 자동설정, 스프링의 `Bean` 읽기와 생성을 모두 자동으로 설정된다. 특히나 `@SpringBootApplication` **이 있는 위치부터 설정을 읽어** 나가기 때문에! 이 클래스는 항상 **프로젝트의 최상단에 위치**해야한다.
+
+
 
 이 안의 `main`에서 실행하는 `SpringApplication.run` 으로 인해 내장 WAS(Web Application Server) 가 실행된다. 이렇게 되면 항상 서버에 톰캣을 설치할 필요가 없고, 스프링 부트로 만들어진 Jar 파일(실행가능한 Java 패키징 파일)로 실행하면 된다. 꼭 스프링 부트 내장 WAS를 사용할 수 있는 것은 아니지만, 그 이유는 **'언제 어디서나 같은 환경에서 스프링 부트를 배포'** 할수 있기 때문이다. 외장 WAS를 쓴다면.. 과거에 내가 했던 경험으로는 Tomca 서버 버전을 맞추고.. 등등 환경설정에서 꽤 많은 힘이들어가는데 이걸 줄여줄 수 있다고 설명할 수 있다.
 
@@ -158,9 +167,14 @@ public class HelloController {
 }
 ```
 
+
+
 - `RestController`
   - 컨트롤러를 JSON을 반환하는 컨트롤러로 만들어 준다.
   - 예전에는 `@ResponseBody` 를 각 메소드마다 선언했던 것을 한번에 사용할 수 있게 도와준다고 생각하면된다.
+
+
+
 - `GetMapping`
   - HTTP method 인 `Get` 의 요청을 받을 수 있는 API를 만들어 준다.
   - 과거에는 `@RequestMapping(method = RequestMethod.GET)`으로 사용되던 것이다.
@@ -203,28 +217,48 @@ public class HelloControllerTest {
 }
 ```
 
+
+
 - `@RunWith(SpringRunner.class)`
   - 테스트를 진행할 때 JUnit 에 내장된 실행자 외에 다른 실행자를 실행시킨다.
   - 여기서는 SpringRunner 라는 스프링 실행자를 사용
   - 즉, 스프링 부트 테스트 와 JUnit 사이의 연결자 역활을 한다고 볼 수 있다.
+
+
+
 - `WebMvcTest`
   - 여러 스프링 테스트 어노테이션 중, Web(Spring MVC)에 집중 할 수 있는 어노테이션 이다.
   - 선언할 경우 `@Controller`, `@ControllerAdvice` 등을 사용할 수 있음
   - 단, `@Service, @Component, @Repository` 등은 사용할 수 없다.
   - 여기서는 컨트롤러만 사용하기 떄문에 선언
+
+
+
 - `@AutoWired`
   - 스프링이 관리하는 빈(Bean)을 주입 받는다.
+
+
+
 - `private MockMVC mvc`
   - 웹 API를 테스트할 때 사용
   - 스프링 MVC 테스트의 시작점
   - 이 클래스를 통해 HTTP GET, POST 등에 대한 API 테스트를 할 수 있다.
+
+
+
 - `mvc.perform(get("/hello"))`
   - MockMvc를 통해 /hello 주소로 HTTP GET 요청을 한다.
   - 체이닝이 지원되어 아래와 같이 여러 검증을 이어서 선언 가능하다.
+
+
+
 - `.andExpect(status().isOk())`
   - mvc.perform 의 결과를 검증
   - HTTP Header의 Status를 검증한다. (ex 200,404,500등의 상태를 검증)
   - 여기서는 isOk()로 200인지 아닌지를 검증한다.
+
+
+
 - `.andExpect(content().string(hello))`
   - mvc.perform의 결과를 검증한다.
   - 응답 본문의 내용을 검증
@@ -238,7 +272,7 @@ public class HelloControllerTest {
 
 #### 롬복(lombok)
 
-롬복은 자바 개발을 할때 자주 사용하는 코드 Getter, Setter, 기본 생성자, toString 등을 어노테이션으로 자동 생성해주는 라이브러리이다. 인텔리제이에선 플러그인으로 쉽게 설정 가능하니 추가해봅시다!
+롬복은 자바 개발을 할때 자주 사용하는 코드 Getter, Setter, 기본 생성자, toString 등을 어노테이션으로 자동 생성해주는 라이브러리이다. 인텔리제이에선 플러그인으로 쉽게 설정 가능하니 추가해보자!!
 
 build.gradle에 `compile('org.projectlombok:lombok')`
 
@@ -266,8 +300,13 @@ public class HelloResponseDto {
 }
 ```
 
+
+
 - `@Getter`
   - 선언된 모든 필드의 get 메소드를 생성해 준다.
+
+
+
 - `@RequiredArgsConstructor`
   - 선언된 모든 final 필드가 포함된 생성자 생성
   - final 이 없는 필드는 생성자에 포함되지 않는다.
@@ -301,10 +340,15 @@ public class HelloResponseDtoTest {
 }
 ```
 
+
+
 - `assertThat`
   - `assertj` 라는 테스트 검증 라이브러리의 검증 메소드이다.
   - 검증하고 싶은 대상을 메소드 인자로 받음
   - 메소드 체이닝이 지원되어 `isEqualTo` 와 같이 메소드를 이어서 사용 가능
+
+
+
 - `isEqualTo`
   - `assertj` 의 동등 비교 메소드이다.
   - `assertThat`에 있는 값과 `isEqualTo`의 값을 비교해서 같을때만 성공이다
@@ -322,10 +366,10 @@ public class HelloResponseDtoTest {
 - HelloController.java 안에 추가
 
 ```java
-    @GetMapping("/hello/dto")
-    public HelloResponseDto helloDto(@RequestParam("name") String name, @RequestParam("amount") int amount) {
-        return new HelloResponseDto(name, amount);
-    }
+@GetMapping("/hello/dto")
+public HelloResponseDto helloDto(@RequestParam("name") String name, @RequestParam("amount") int amount) {
+   return new HelloResponseDto(name, amount);
+}
 ```
 
 - `RequestParam`
@@ -384,13 +428,20 @@ public class HelloControllerTest {
   - API 테스트 할때 사용될 요청 파라미터를 설정한다.
   - 값은 `String` 만 허용된다.
   - 숫자/날짜 등의 데이터도 등록할 때는 문자열로 변경해야한다. 
+
+
+
 - `jsonPath`
   - JSON 응답값을 필드별로 검증할 수 있는 메소드 이다.
   - `$`를 기준으로 필드명을 명시
   - 여기서 name 과 amount 를 검증하니 $.name , $.amount 로 검증한다.
+
+
 
 ## intelliJ 단축키들(Mac)
 
 - Action 창 검색 : `Command + Shift + A`
 - Commit 창 열기 : `Command + K`
 - Push 창 열기 : `Command + Shift + K`
+- Test관련 창 띄우기 : `Command + Shift + T`
+
