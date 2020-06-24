@@ -141,7 +141,7 @@ public class Application {
 
 
 
-이 안의 `main`에서 실행하는 `SpringApplication.run` 으로 인해 내장 WAS(Web Application Server) 가 실행된다. 이렇게 되면 항상 서버에 톰캣을 설치할 필요가 없고, 스프링 부트로 만들어진 Jar 파일(실행가능한 Java 패키징 파일)로 실행하면 된다. 꼭 스프링 부트 내장 WAS를 사용할 수 있는 것은 아니지만, 그 이유는 **'언제 어디서나 같은 환경에서 스프링 부트를 배포'** 할수 있기 때문이다. 외장 WAS를 쓴다면.. 과거에 내가 했던 경험으로는 Tomca 서버 버전을 맞추고.. 등등 환경설정에서 꽤 많은 힘이들어가는데 이걸 줄여줄 수 있다고 설명할 수 있다.
+이 안의 `main`에서 실행하는 `SpringApplication.run` 으로 인해 내장 WAS(Web Application Server) 가 실행된다. 이렇게 되면 항상 서버에 톰캣을 설치할 필요가 없고, 스프링 부트로 만들어진 Jar 파일(실행가능한 Java 패키징 파일)로 실행하면 된다. 꼭 스프링 부트 내장 WAS를 사용할 수 있는 것은 아니지만, 그 이유는 **'언제 어디서나 같은 환경에서 스프링 부트를 배포'** 할수 있기 때문이다. 외장 WAS를 쓴다면.. 과거에 내가 했던 경험으로는 톰켓 서버 버전을 맞추고.. 등등 환경설정에서 꽤 많은 힘이들어가는데 이걸 줄여줄 수 있다고 설명할 수 있다.
 
 
 
@@ -183,7 +183,7 @@ public class HelloController {
 
 컨트롤러를 작성했으니 이제 이 코드가 제대로 작동하는지 테스트를 해보자. **WAS를 실행하지 않고 테스트 코드로 검증**해 보겠다.
 
-src/test/java 디렉토리에 앞에 생성했던 패키자를 그대로 다시 생성해보자.
+src/test/java 디렉토리에 앞에 생성했던 패키지를 그대로 다시 생성해보자.
 
 
 
@@ -353,7 +353,7 @@ public class HelloResponseDtoTest {
   - `assertj` 의 동등 비교 메소드이다.
   - `assertThat`에 있는 값과 `isEqualTo`의 값을 비교해서 같을때만 성공이다
 
->여기서 라이브러리를 보면 Junit의 기본 assertThat 이 아닌 assetj의 assertThat 을 사용하고 있다. 저자는 CoreMathers와 달리 추가적 라이브러리가 필요하지 않다는 것과 자동완성이 좀 더 확실하게 지원되는 장점을 뽑는데 더 자세한 내용은 [이것](http://bit.ly/30vm9Lg) 를 참고하자.
+>여기서 라이브러리를 보면 Junit의 기본 assertThat 이 아닌 assetj의 assertThat 을 사용하고 있다. 저자는 Junit의 assertThat을 쓰게되면 is()와 같이 CoreMatchers 에 있는 추가적인 라이브러리가 필요하지 않다는 것과 자동완성이 좀 더 확실하게 지원되는 장점을 뽑는데 더 자세한 내용은 [이것](http://bit.ly/30vm9Lg) 를 참고하자.
 
 
 
