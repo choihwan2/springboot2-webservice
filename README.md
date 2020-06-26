@@ -436,9 +436,286 @@ public class HelloControllerTest {
   - `$`를 기준으로 필드명을 명시
   - 여기서 name 과 amount 를 검증하니 $.name , $.amount 로 검증한다.
 
-
-
 ## 3장 스프링 부트에서 JPA로 데이터베이스 다뤄보기
+
+웹 서비스를 개발하고 운영하다 보면 결국 데이터베이스를 다루는 일을 하게 된다. 스프링으로 개발을 하다보면 `MyBatis` 와 같은 SQL 매퍼를 이용해 데이터베이스의 쿼리를 작성했다. 그러다 보니 실제 개발하는 시간 < SQL 을 다루는 시간 인걸 발견하게됨. **객체지향 프로그래밍**을 배워서 객체 모델링보다는 **테이블 모델링**에만 집중하게 되고, 객체를 단순히 테이블에 맞추어 데이터 전달 역활만 하는 개발이 이상하게 생각됨. 관계형 데티어베이스를 이용하면서 프로젝트에서 객체지향 프로그램ㅇ의 해답 => **JPA 라는 자바 표준 ORM(Object Relational Mapping** 을 발견하게됨.
+
+
+
+현 SI 환경에서는 Spring & MyBatis 를 많이 사용하지만, 쿠팡, 우아한형제들, NHN 등은 SpringBoot & JPA 를 전사 표준으로 사용하고 있고 점점 더 많은 회사가 이 추세로 가고있다.
+
+
+
+#### JPA가 필요한 이유
+
+현 웹 애플리케이션에서 관계형 데이터베이스는 필수! => 객체를 관계형 데이터베이스에서 관리하는 것이 중요하게 되었다. 
+
+- 기본적인 CRUD(Create, Read, Update, Delete) SQL 을 매번 생성해야함.(반복과 유지보수의 힘듬)
+
+- 패러다임의 불일치
+
+  - 객체지향 프로그래밍 : 메시지를 기반으로 **기능과 속성을 한 곳에서 관리** 
+  - 관계형 데이터베이스: **어떻게 데이터를 저장**할지에 초점이 맞춰져있음.
+
+  관계형 데이터에비읏로 객체지향(추상화,캡슐화,정보은닉,다형성 등) 을 표현할 수 있을까?
+
+  => 어렵다.. 
+
+이런 문제들, 서로 지향하는 바가 다른 2개 영역(객체지향 과 관계형 데이터베이스)을 중간에서 패러다임 일치 시키기 위한 기술
+
+=> **JPA**
+
+즉, 개발자는 객체지향적으로 프로그래밍 하고 JPA가 이를 관계형 데이터베이스에 맞게 SQL 대신 생성해서 실행한다. 이로 개발자는 SQL에 종속적인 개발을 하지 않아도 된다!
+
+
+
+#### Spring Data JPA
+
+JPA는 인터페이스로 자바 표준명세서이다. 인터페이스 사용을 위한 구현체로는 Hibrernate, Eclipse Link 등을 활용등이 있다. 하지만 Spring 에서는 구현체들을  쉽게 사용하고자 추상화시킨 Spring Data JPA 라는 모듈을 이용하여 JPA 기술을 다룬다. 
+
+- JPA ← HiberNate ← Spring Data JPA
+
+이렇게 하는 이유는
+
+- 구현체 교체의 용이성
+- 저장소 교체의 용이성
+
+을 말할 수 있다. '구현체 교체의 용이성' 이란 **Hibernate 외에 다른 구현체로 쉽게 교체하기 위함**이라고 할 수 있다.
+
+'저장소 교체의 용이성' 이란 **관계형 데이터베이스 외에 다른 저장소로 쉽게 교체하기 위함**이라고 할 수 있다. 더 자세한 내용들은
+
+[이곳]([https://velog.io/@adam2/JPA%EB%8A%94-%EB%8F%84%EB%8D%B0%EC%B2%B4-%EB%AD%98%EA%B9%8C-orm-%EC%98%81%EC%86%8D%EC%84%B1-hibernate-spring-data-jpa](https://velog.io/@adam2/JPA는-도데체-뭘까-orm-영속성-hibernate-spring-data-jpa))을 참고하면 좋을 것 같다. 
+
+
+
+#### 프로젝트에 Spring Data Jpa 적용하기
+
+먼저 build.gradle 에 `'org.springframework.boot:spring-boot-starter-data-jpa'`  과 `com.h2database:h2`를 등록하자. 
+
+- `spring-boot-starter-data-jpa`
+  - 스프링 부트용 Spring Data Jpa 추상화 라이브러리
+  - 스프링 부트 버전에 맞춰 자동으로 JPA 관련 라이브러리들의 버전을 관리해준다.
+- `h2`
+  - 인메모리 관계형 데이터베이스
+  - 별도 설치 필요 x 프로젝트 의존성만으로 관리 가능
+  - 메모리에서 실행 => 애플리케이션 재실행마다 초기화되어 테스트 용도로 많이 사용
+
+
+
+의존성을 등록되었다면, 본격적으로 JPA 기능을 사용해 보겠다. 먼저 domain 패키지를 만들고 시작한다.
+
+여기서 도메인이란 소프트웨어데 대한 요구사항 혹은 문제영역이라고 생각하면 된다. 기존에 MyBatis 같은걸로 쿼리 매퍼를 사용했다면 dao 패키지를 떠올리겠지만, dao 와 조금 결이 다르다고 생각하면 된다. 용어가 어색하겠지만 진행하면서 어떤건지 좀 더 체감할 수 있다고 한다.
+
+
+
+domain 패키지 안에 posts 패키지와 Posts 클래스를 만든다.
+
+- Posts.java
+
+```java
+package com.choihwan2.book.springboot2.domain.posts;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+
+@Getter
+@NoArgsConstructor
+@Entity
+public class Posts {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(length = 500, nullable = false)
+    private String title;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String content;
+
+    private String author;
+
+    @Builder
+    public Posts(String title, String content, String author) {
+        this.title = title;
+        this.content = content;
+        this.author = author;
+    }
+}
+```
+
+> 여기서 꽤 많은 어노테이션들이 상용되는데 어노테이션의 순서를 **주요 어노테이션을 클래스에 가깝게** 적는 습관을 들이면 좋다고 한다. 후에 유지보수등의 문제에서 유용함이 많다.
+
+- `@Entity`
+  - 테이블과 링크될 클래스를 나타냄
+  - 기본값으로는 클래스의 카멜케이스 이름을 언더스코어 네이밍으로 테이블 이름을 매칭한다. (ex SalesManager => sales_manager table)
+
+
+
+- `@Id`
+  - 해달 테이블의 PK 필드를 나타낸다.
+
+
+
+- `@GeneratedValue`
+  - PK의 생성 규칙을 나타낸다.
+  - 스프링 부트 2.0 에서는 `Genteration Type.IDENTITY` 옵션을 추가해야만 auto_increment가 된다.
+  - 과거 스프링부트와 차이점은 [여기](http://jojoldu.tistory.com/295)에서 참고하자.
+- `@Column`
+  - 테이블의 칼럼을 나타내며 굳이 선언하지 않아도 해당 클래스의 필드는 모두 칼럼이 된다.
+  - 그렇다면 사용하는 이유는? 기본값 외에 추가로 변경이 필요한 옵션이 있으면 사용!
+  - 문자열 경우 `VARCHAR(255)` 가 기본값인데, 사이즈를 500으로 늘리거나 타입을 `TEXT`로 변경하고 싶거나 하는 등 경우 사용된다.
+
+> https://ra2kstar.tistory.com/82 VARCHAR와 TEXT의 차이 링크이다. 그리고 웬만하면 Entity의 PK는 Long 타입의 Auto_increment를 추천한다. 
+
+밑으로는 lombok 어노테이션들이다.
+
+- `@NoArgsConstructor`
+  - 기본 생성자 자동추가
+  - public Posts(){} 와 같은 효과
+- `@Getter`
+  - 클래스 내 모든 필드의 Getter 메소드를 자동 생성
+- `@Builder`
+  - 해당 클래스의 빌더 패턴 클래스 생성
+  - 생성자 상단에 선언 시 생성자에 포함된 필드만 빌더에 포함
+
+
+
+여기서 보면 **Setter** 메소드가 없다는 것을 알 수 있다. 기존의 자바빈 규약과 다르게 **getter/setter**를 무작정 생성하는 경우가 있는데, 이럴경우 해당 클래스의 인스턴스 값들이 언제 어디서 변하는지 코드상으로 명확하게 구분할 수가 없어, 차후 기능 변경시 복잡해질 수 있기 때문이다. 그래서 **Entity 클래스에서는 절대 Setter 메소드를 만들지 않는다.** 대신 해당 필드의 값 변경이 필요하면 명확히 그 목적과 의도를 나타낼 수 있는 메소드를 추가해야한다. 예를들어 주문 취소 메소드가 있다면
+
+
+
+- 잘못된 사용
+
+```java
+public class Order{
+   public void setStatus(boolean status){
+      this.status = status;
+   }
+}
+
+public void 주문서비스의_취소이벤트(){
+   order.setStatus(false);
+}
+```
+
+
+
+- 올바른 사용
+
+```java
+public class Order{
+   public void cancelOrder(){
+      this.status = false;
+   }
+}
+
+public void 주문서비스의_취소이벤트(){
+   order.cancelOrder();
+}
+```
+
+이렇게 사용하는 것이다. 여기서 또 의문은 **Setter가 없는 상황에서 어떻게 값을 채워 DB에 삽입**하냐 이다. 여기서는 `@Builder`를 통해 제공되는 빌더 클래스를 사용한다. 생성자나 빌더나 값을 채워주는 역활을 똑같지만 빌더클래스일 경우 지금 채워야할 필드가 어떤건지 명확하게 지정할 수 있는 장점이있다.
+
+```java
+public Example(String a, String b){
+   this.a = a;
+   this.b = b;
+}
+```
+
+예를 들어 new Example(b,a) 처럼 **a와 b의 위치를 변경해도 코드를 실행하기 전까지는 문제를 찾을 수 없다.**
+
+그러나 builder를 사용한다면
+
+```java
+Example.builder().a(a).b(b).build();
+```
+
+와 같이 **어느 필드에 어떤 값을 채워야 할지 명확하게 인지가 가능**하다!
+
+
+
+이제 Posts 클래스로 Database 접근하게 해주는 JpaRepository를 생성한다.
+
+- JpaRepository.java
+
+```java
+package com.choihwan2.book.springboot2.domain.posts;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PostsRepository extends JpaRepository<Posts,Long> {
+}
+```
+
+단순하게 인터페이스 생성 후, JpaRepository<Entity 클래스, PK 타입> 를 상속하면 기본적인 CRUD 메소드가 자동으로 생성된다. 여기서 가장 중요한 점은 **Entity 클래스와 기본 Entity Repository 는 함께 위치**해야 하는 점이다. 둘은 아주 밀접한 관계이고 Entity 클래스는 **기본 Repository 없이 제대로 역활을 할 수가 없다.** 후에 프로젝트가 커져 도메인별로 프로젝트를 분리해야하면 둘은 꼭 같이 움직여야 하므로 도메인 패키지에서 함께 관리한다.
+
+
+
+이 코드들을 테스트하는 코드를 작성해보자
+
+```java
+package com.choihwan2.book.springboot2.web.domain.posts;
+
+import com.choihwan2.book.springboot2.domain.posts.Posts;
+import com.choihwan2.book.springboot2.domain.posts.PostsRepository;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class PostsRepositoryTest {
+
+    @Autowired
+    PostsRepository postsRepository;
+
+    @After
+    public void cleanup(){
+        postsRepository.deleteAll();
+    }
+
+    @Test
+    public void 게시글저장_불러오기() {
+        //given
+        String title = "테스트 게시글";
+        String content = "테스트 본문";
+
+        postsRepository.save(Posts.builder().title(title).content(content).author("choihwan2@naver.com").build());
+
+        //when
+        List<Posts> postsList = postsRepository.findAll();
+
+        //then
+        Posts posts = postsList.get(0);
+        assertThat(posts.getTitle()).isEqualTo(title);
+        assertThat(posts.getContent()).isEqualTo(content);
+    }
+}
+```
+
+
+
+- `@After`
+  - Junit에서 단위 테스트가 끝날 대마다 수행되는 메소드 지정
+  - 보통 배포 전 전체 테스트를 수행할 때 테스트간 데이터 침법을 막기 위해 사용
+  - 여러 테스트가 동시에 수행되면 테스트용 데이터베이스인 H2에 데이터가 남아있어 후의 테스트를 실패 할 수도 있다.
+- `postsRepository.save`
+  - 테이블 posts에 insert/update 쿼리를 실행한다.
+  - id 값이 있다면 update가, 없다면 insert 쿼리가 실행된다.
+- `postsRepository.findAll`
+  - 테이블 posts에 있는 모든 데이터를 조회해오는 메소드이다.
 
 
 
