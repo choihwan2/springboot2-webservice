@@ -719,6 +719,130 @@ public class PostsRepositoryTest {
 
 
 
+#### 등록/수정/조회 API 만들기
+
+API를 만들기 위한 3개의 클래스
+
+- Request 데이터를 받을 Dto
+- API 요청을 받을 Controller
+- 트랜잭션, 도메인 기능 간의 순서를 보장하는 Service
+
+
+
+Service에서 비지니스 로직을 처리해야한다?? 그렇지 않다. Service는 **트랜잭션, 도메인 간 순서 보장의 역할**만 처리한다.
+
+> 트랜잭션?? 도메인??
+
+- Spring 웹 계층
+
+![spring_web_layerr](images/spring_web_layerr.png)
+
+
+
+- Web Layer
+  - 흔히 사용하는 컨트롤러와 JSP/Freemarker 등의 뷰 템플릿 영역이다.
+  - 이외에도 필터, 인터셉터, 컨트롤러 어드바이스 등 외부 요청과 응답에 대한 전반적인 영역을 말한다.
+
+
+
+- Service Layer
+  - @Service 에 사용되는 서비스 영역이다.
+  - 일반적으로 Controller 와 Dao 의 중간 영역
+  - @Transactional이 사용되어야 하는 영역이다.
+
+
+
+- Repository Layer
+  - **Database**와 같이 데이터 저장소에 접근하는 영역
+  - 기존의 Dao(Data Access Object) 의 영역으로 이해하면 된다.
+
+
+
+- Dtos
+  - Dto(Data Transfer Object) 는 **계층 간에 데이터 교환을 위한 객체**를 이야기하며 Dtos는 이들의 영역이다.
+  - 예를 들어 뷰에서 사용될 객체나 Repository Layer에서 결과로 넘겨준 객체 등이다.
+
+
+
+- Domain Model
+  - 도메인이라 불리는 개발 대상을 모든 사람이 동일한 관점에서 이해할 수 있고 공유할 수 있도록 단순화 시킨 것을 도메인 모델이라고 한다. (ex 택시 앱이라면 배차, 탑승, 요금 등이 모두 도메인)
+  - @Entity를 사용했다면 @Entity가 사용된 영역 역시 도메인 모델이라고 이해해도 된다.
+  - 하지만! 무조건 데이터베이스의 테이블과 관계가 있어야하는건 아니다
+  - VO처럼 값 객체들도 이 영역에 해당하기 때문.
+
+
+
+이 5가지 레이어에서 비즈니스 처리를 담당해야할 곳은?
+
+=> **Domain**
+
+
+
+이제 등록, 수정, 삭제 기능을 도메인 모델을 다루는 코드로 작성해 보겠다.
+
+- PostsApiController
+
+```java
+package com.choihwan2.book.springboot2.web;
+
+import com.choihwan2.book.springboot2.service.posts.PostsService;
+import com.choihwan2.book.springboot2.web.dto.PostsSaveRequestDto;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+@RequiredArgsConstructor
+@RestController
+public class PostsApiController {
+    private final PostsService postsService;
+
+    @PostMapping("/api/v1/posts")
+    public Long save(@RequestBody PostsSaveRequestDto requestDto){
+        return postsService.save(requestDto);
+    }
+}
+```
+
+
+
+- PostsService
+
+```java
+package com.choihwan2.book.springboot2.service.posts;
+
+import com.choihwan2.book.springboot2.domain.posts.PostsRepository;
+import com.choihwan2.book.springboot2.web.dto.PostsSaveRequestDto;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@RequiredArgsConstructor
+@Service
+public class PostsService {
+    private final PostsRepository postsRepository;
+
+    @Transactional
+    public Long save(PostsSaveRequestDto requestDto){
+        return postsRepository.save(requestDto.toEntity()).getId();
+    }
+}
+```
+
+
+
+책에서는 스프링을 어느 정도 썼다면 Controller 와 Service에서 @Autowired가 없는 것이 어색할 것 같다고 적혀져있지만.. 나는 어리둥절... 아무튼 스프링에서 Bean을 주입 받는 방식으로는
+
+- @Autowired
+- setter
+- 생성자
+
+이 중 가장 권장 하는 방식은 **생성자로 주입** 받는 방식이다. 
+
+> 그 이유는? [여기](https://yaboong.github.io/spring/2019/08/29/why-field-injection-is-bad/)서 학습하자.
+
+
+
 ## intelliJ 단축키들(Mac)
 
 - Action 창 검색 : `Command + Shift + A`
