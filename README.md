@@ -841,6 +841,293 @@ public class PostsService {
 
 > 그 이유는? [여기](https://yaboong.github.io/spring/2019/08/29/why-field-injection-is-bad/)서 학습하자.
 
+그렇다면 생성자는? 바로 `@RequiredArgsConstructor`에서 해결해 준다. final이 선언된 모든 필드를 인자값으로 하는 생성자를 롬복의 `@RequiredArgsConstructor`가 대신 생성해 준 것이다. 이제 Controller 와 Service가 사용할 Dto 클래스를 만들어보자
+
+- PostsSaveRequestDto
+
+```java
+package com.choihwan2.book.springboot2.web.dto;
+
+import com.choihwan2.book.springboot2.domain.posts.Posts;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+public class PostsSaveRequestDto {
+    private String title;
+    private String content;
+    private String author;
+
+    @Builder
+    public PostsSaveRequestDto(String title, String content, String author) {
+        this.title = title;
+        this.content = content;
+        this.author = author;
+    }
+
+    public Posts toEntity() {
+        return Posts.builder().title(title).content(content).author(author).build();
+
+    }
+}
+```
+
+기존에 있던 Entity 클래스와 매우 유사하다는걸 알수있다.
+
+
+
+- 유사한 Entity 클래스인 Post
+
+```java
+package com.choihwan2.book.springboot2.domain.posts;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+
+@Getter
+@NoArgsConstructor
+@Entity
+public class Posts {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(length = 500, nullable = false)
+    private String title;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String content;
+
+    private String author;
+
+    @Builder
+    public Posts(String title, String content, String author) {
+        this.title = title;
+        this.content = content;
+        this.author = author;
+    }
+}
+```
+
+하지만 Dto 클래스를 추가로 생성했다. 왜일까? 먼저 **Entity 클래스를 Request/Response 클래스로 사용해서는 안된다**라는 걸 명심하고 들어가자. Entity 클래스는 데이터베이스와 맞닿은 핵심 클래스로 Entity 클래스를 기준으로 테이블 생성, 스키마가 변경되기도 한다. 화면 변경은 자주 일어나는 사소한 기능 변경인데, 이를 위해 테이블과 연결된 Entity 클래스를 변경하는 건 너무 큰 변경이다. 그래서 자주 변경이 일어나는 View를 위한, Request 와 Response 용 Dto를 생성하는 것이다. 실제로 Controller 에서 결과값으로 여러 테이블을 조인해서 줘야 할 경욱 빈번하니 Entity 클래스 만으로 표현하기 어려운 경우가 많다. 그러니 꼭 Entity 클래스와 Controller에서 쓸 Dto는 분리해서 사용하는 것이 중요하다.
+
+
+
+이제 테스트를 진행해보자.
+
+
+
+- PostsApiControllerTest
+
+```java
+package com.choihwan2.book.springboot2.web;
+
+import com.choihwan2.book.springboot2.domain.posts.Posts;
+import com.choihwan2.book.springboot2.domain.posts.PostsRepository;
+import com.choihwan2.book.springboot2.web.dto.PostsSaveRequestDto;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class PostsApiControllerTest {
+
+    @LocalServerPort
+    private int port;
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Autowired
+    private PostsRepository postsRepository;
+
+    @After
+    public void tearDown() throws Exception{
+        postsRepository.deleteAll();
+    }
+
+    @Test
+    public void Posts_등록된다() throws Exception{
+        //given
+        String title = "title";
+        String content = "content";
+        PostsSaveRequestDto requestDto = PostsSaveRequestDto.builder().title(title).content(content).author("author").build();
+
+        String url = "http://localhost:" + port + "/api/v1/posts";
+
+        //when
+        ResponseEntity<Long> responseEntity = restTemplate.postForEntity(url, requestDto, Long.class);
+
+        //then
+
+        assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(responseEntity.getBody()).isGreaterThan(0L);
+
+        List<Posts> all = postsRepository.findAll();
+        assertThat(all.get(0).getTitle()).isEqualTo(title);
+        assertThat(all.get(0).getContent()).isEqualTo(content);
+    }
+}
+```
+
+
+
+Api Controller를 테스트 하는데 HelloController 와 다르게 `@WebMvcTest`를 사용하지 않았다. `@WebMvcTest` 의 경우 JPA기능이 작동하지 않기 때문이다. 지금과 같이 JPA 기능까지 한번에 테스트 할때는 `@SpringBootTest`와 TestRestTemplate을 사용하면 된다. 등록 기능을 완성했으니 수정/조회 기능을 만들어보자
+
+
+
+- PostsApiController
+
+```java
+@RequiredArgsConstructor
+@RestController
+public class PostsApiController {
+   ///...
+   
+    @PutMapping("/api/v1/posts/{id}")
+    public Long update(@PathVariable Long id, @RequestBody PostsUpdateRequestDto requestDto){
+        return postsService.update(id, requestDto);
+    }
+
+    @GetMapping("/api/v1/posts/{id}")
+    public PostsResponseDto findById (@PathVariable Long id){
+        return postsService.findById(id);
+    }
+}
+
+```
+
+
+
+- PostsResponseDto
+
+```java
+package com.choihwan2.book.springboot2.web.dto;
+
+import com.choihwan2.book.springboot2.domain.posts.Posts;
+import lombok.Getter;
+
+@Getter
+public class PostsResponseDto {
+    private Long id;
+    private String title;
+    private String content;
+    private String author;
+
+    public PostsResponseDto(Posts entity){
+        this.id = entity.getId();
+        this.title = entity.getTitle();
+        this.content = entity.getContent();
+        this.author = entity.getAuthor();
+    }
+}
+```
+
+PostsResponseDto 는 Entity의 필드중 일부만 사용하니 생성자로 entity를 받아 필드에 값을 넣습니다.
+
+
+
+- PostsUpdateRequestDto
+
+```java
+package com.choihwan2.book.springboot2.web.dto;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+public class PostsUpdateRequestDto {
+    private String title;
+    private String content;
+
+    @Builder
+    public PostsUpdateRequestDto(String title, String content){
+        this.title = title;
+        this.content = content;
+    }
+}
+```
+
+
+
+- Posts
+
+```java
+@Getter
+@NoArgsConstructor
+@Entity
+public class Posts {
+   ///...
+    public void update(String title, String content){
+        this.title = title;
+        this.content = content;
+    }
+}
+
+```
+
+
+
+- PostsService
+
+```java
+@RequiredArgsConstructor
+@Service
+public class PostsService {
+   ///...
+
+    @Transactional
+    public Long update(Long id, PostsUpdateRequestDto requestDto) {
+        Posts posts = postsRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다. id = " + id));
+
+        posts.update(requestDto.getTitle(), requestDto.getContent());
+
+        return id;
+    }
+
+    public PostsResponseDto findById(Long id) {
+        Posts entity = postsRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다. id = " + id));
+
+        return new PostsResponseDto(entity);
+    }
+}
+
+```
+
+
+
+여기서 신기한 건 update 기능에서 **쿼리를 날리는 부분이 없다**는 것이다. 이게 가능한 이유는 JPA의 **영속성 컨텍스트** 때문이다. 영속성 컨텍스트란, 엔티티를 영구저장하는 환경이다. 일종의 논리적 개념이며 JPA의 핵심은 **엔티티가 영속성 컨텍스트에 포함되어 있냐 없냐**이다.
+
+
+
+JPA의 엔티티 매니저가 활성된 상태로 **트랜잭션 안에서 데이터베이스에서 데이터를 가져오면** 이 데이터는 영속성 컨텍스트가 유지된 상태이다. 이 상태에서 값을 변경하면 **트랜잭션이 끝나는 시점에 해당 테이블에 변경분을 반영**한다. 이 개념을 **더티 체킹** 이라고 한다.
+
+> 좀 더 설명이 필요할 것 같으면 https://jojoldu.tistory.com/415 로 가자!
+
+
+
+이제 이 코드를 테스트 수정을 테스트해보자!
+
 
 
 ## intelliJ 단축키들(Mac)
