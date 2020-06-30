@@ -1126,7 +1126,81 @@ JPA의 엔티티 매니저가 활성된 상태로 **트랜잭션 안에서 데�
 
 
 
-이제 이 코드를 테스트 수정을 테스트해보자!
+이제 이 코드를 테스트해보자!
+
+
+
+- PostsApiControllerTest
+
+```java
+package com.choihwan2.book.springboot2.web;
+
+import com.choihwan2.book.springboot2.domain.posts.Posts;
+import com.choihwan2.book.springboot2.domain.posts.PostsRepository;
+import com.choihwan2.book.springboot2.web.dto.PostsSaveRequestDto;
+import com.choihwan2.book.springboot2.web.dto.PostsUpdateRequestDto;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class PostsApiControllerTest {
+   //***
+
+    @Test
+    public void Posts_수정된다() throws Exception{
+        //given
+        Posts savedPosts = postsRepository.save(Posts.builder().title("title").content("content").author("author").build());
+
+        Long updateId = savedPosts.getId();
+        String expectedTitle = "title2";
+        String expectedContent = "content2";
+
+        PostsUpdateRequestDto requestDto = PostsUpdateRequestDto.builder().title(expectedTitle).content(expectedContent).build();
+
+        String url = "http://localhost:" + port + "/api/v1/posts/" + updateId;
+
+        HttpEntity<PostsUpdateRequestDto> requestEntity = new HttpEntity<>(requestDto);
+
+        //when
+        ResponseEntity<Long> responseEntity = restTemplate.exchange(url, HttpMethod.PUT, requestEntity, Long.class);
+
+        //then
+        assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(responseEntity.getBody()).isGreaterThan(0L);
+
+        List<Posts> all = postsRepository.findAll();
+
+        assertThat(all.get(0).getTitle()).isEqualTo(expectedTitle);
+        assertThat(all.get(0).getContent()).isEqualTo(expectedContent);
+
+    }
+}
+```
+
+
+
+사용해보면 예전  MyBatis를 사용했을 때 보다 JPA를 씀으로 좀 더 객체지향적으로 코딩을 할 수 있음을 느낄 수 있다. 조회 기능을 테스트하기 위해 application.properties에 `spring.h2.console.enabled = true` 를 추가해보자.
+
+
+
+http://localhost:8080/h2-console 로 접속하여 JDBC:URL 부분을 `jdbc:h2:mem:testdb` 로 바꾸어 접속한다음 쿼리문들을 실행하여 조회할 수 있다. 데이터를 추가한다음 브라우저로 API를 조회해 보기도 해보자!
+
+
 
 
 
