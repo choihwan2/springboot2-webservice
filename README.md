@@ -1202,6 +1202,124 @@ http://localhost:8080/h2-console 로 접속하여 JDBC:URL 부분을 `jdbc:h2:me
 
 
 
+#### JPA Auditing으로 생성시간/수정시간 자동화하기
+
+보통 엔티티에는 해당 데이터의 생성시간과 수정시간을 포함한다. 매번 이런 코드의 반복을 없애기 위해서 JPA Auditing을 사용해보자 Java8 에서 사용되는 `LocalDate`와 `LocalDateTime`을 활용한다.
+
+
+
+domain 패키지에 BaseTimeEntity 클래스를 생성한다.
+
+- BaseTimeEntity
+
+```java
+package com.choihwan2.book.springboot2.domain;
+
+import lombok.Getter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import javax.persistence.EntityListeners;
+import javax.persistence.MappedSuperclass;
+import java.time.LocalDateTime;
+
+@Getter
+@MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
+public abstract class BaseTimeEntity {
+    @CreatedDate
+    private LocalDateTime createDate;
+
+    @LastModifiedDate
+    private LocalDateTime modifiedDate;
+    
+}
+```
+
+
+
+- `@MappedSuperClass`
+  - JPA Entity 클래스들 BaseTimeEntity를 상속할 경우 필드(`createdDate, modifiedDate`)들도 칼럼으로 인식합니다.
+
+
+
+- `EntityListeners(AuditingEntityListener.class)`
+  - BaseTimeEntity 클래스에 Auditing 기능을 포함시킨다.
+
+
+
+- `@CreatedDate`
+  - Entity가 생성되어 저장될 때 시간이 자동 저장된다.
+
+
+
+- `@LastModifiedDate`
+  - 조회한 Entity의 값을 변경할 때 시간이 자동 저장된다.
+
+
+
+BaseTimeEntity 클래스는 모든 Entity의 상위 클래스가 되어 Entity들의 createdDate, modifiedDate를 자동으로 관리하는 역활을 합니다.
+
+
+
+그리고 이제 Post 클래스가  BaseTiemEntity를 상속받게 변경하고 Application 클래스에 활성화 어노테이션, `@EnableJpaAuditing`을 하나 추가합니다. 그후 테스트 코드를 추가해서 테스트 해보자!
+
+
+
+- PostRepositoryTest
+
+```java
+package com.choihwan2.book.springboot2.web.domain.posts;
+
+import com.choihwan2.book.springboot2.domain.posts.Posts;
+import com.choihwan2.book.springboot2.domain.posts.PostsRepository;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class PostsRepositoryTest {
+   
+   //...
+   
+    @Test
+    public void BaseTimeEntity_등록() {
+        //given
+        LocalDateTime now = LocalDateTime.of(2019,6,4,0,0,0);
+        postsRepository.save(Posts.builder().title("title").content("content").author("author").build());
+
+        //when
+        List<Posts> postsList = postsRepository.findAll();
+
+        //then
+        Posts posts = postsList.get(0);
+
+
+        System.out.println(">>>>>>>>>>> createDate=" + posts.getCreateDate() + " , modifiedDate = " + posts.getModifiedDate());
+
+        assertThat(posts.getCreateDate()).isAfter(now);
+        assertThat(posts.getModifiedDate()).isAfter(now);
+    }
+}
+
+```
+
+
+
+수행해보면 실제시간이 잘 저장된 것이 나온다!!
+
+
+
 
 
 ## intelliJ 단축키들(Mac)
